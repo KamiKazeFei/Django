@@ -32,27 +32,34 @@ def excuteSaveTspUser(request):  # 修改
     return returnObj
 
 # 檢查電子郵件、帳號 、使用者名稱有無重複
+
+
 def infoDuplicateCheck(request):
     data = json.loads(request.body.decode('utf-8'))
     try:
-        User.objects.get(Q(email__contains=data['email']) | Q(account__contains=data['account']) | Q(username__contains=data['username']))                
+        User.objects.get(Q(email__contains=data['email']) | Q(
+            account__contains=data['account']) | Q(username__contains=data['username']))
         return returnHttpsResponse(True, '帳號或郵件或使用者名稱存在重複資訊，請嘗試輸入其他資料', [], '')
     except Exception as e:
-        return  returnHttpsResponse(False, '註冊成功，將導向至登入頁面', [], '')
-        
+        return returnHttpsResponse(False, '註冊成功，將導向至登入頁面', [], '')
+
 # 登入檢查
+
+
 @csrf_exempt
 def loginCheck(request):
     data = json.loads(request.body.decode('utf-8'))
     try:
-        loginUser = User.objects.get(Q(Q(email=data['login_id']) | Q(account=data['login_id']) & Q(password=data['password'])))
+        loginUser = User.objects.get(Q(Q(email=data['login_id']) | Q(
+            account=data['login_id']) & Q(password=data['password'])))
         token = getTokensForUser(loginUser)
         response = returnHttpsResponse(False, '登入成功', [token], '')
-        response.set_cookie( 'ACCESS_TOKEN', token['access'], max_age=3600, samesite='none', secure=True)
-        response.set_cookie( 'REFRESH_TOKEN', token['refresh'], max_age=25200, samesite='none', secure=True)        
-        return response   
+        response.set_cookie(
+            'ACCESS_TOKEN', token['access'], max_age=3600, samesite='none', secure=True)
+        response.set_cookie(
+            'REFRESH_TOKEN', token['refresh'], max_age=25200, samesite='none', secure=True)
+        return response
     except Exception as e:
-        print(str(e))
         return returnHttpsResponse(True, '查無此帳號，請確認登入資訊', [], '')
 
 
@@ -80,6 +87,8 @@ def checkJWTtoken(request):
 # 登出
 def logout(request):
     response = returnHttpsResponse(False, '已登出', [], '')
-    response.set_cookie('ACCESS_TOKEN', '', max_age=0, samesite='none', secure=True)
-    response.set_cookie('REFRESH_TOKEN', '', max_age=0, samesite='none', secure=True)
+    response.set_cookie('ACCESS_TOKEN', '', max_age=0,
+                        samesite='none', secure=True)
+    response.set_cookie('REFRESH_TOKEN', '', max_age=0,
+                        samesite='none', secure=True)
     return response
