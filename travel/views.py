@@ -1,14 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
-import decimal
 import json
+from operator import attrgetter
 from django.db import transaction
 from django.db.models import Q
 from django.forms import model_to_dict
-from common import ModelSerializer, execute_raw_sql, query, returnHttpsResponse, save
+from common import execute_raw_sql, returnHttpsResponse, save
 from travel.models import cost_record, day_introduce, schedule
-from django.core.serializers.json import DjangoJSONEncoder
-
 
 @transaction.atomic
 def getTravelSchedule(request):
@@ -65,8 +63,7 @@ def excuteQuery(request):  # 執行查詢
 
             scheduleDict = model_to_dict(travelSchedule)
             scheduleDict['day_introduces'] = introducesList
-            scheduleDict['cost_records'] = json.loads(
-                json.dumps(costRecordList, cls=CustomEncoder))
+            scheduleDict['cost_records'] = sorted(json.loads(json.dumps(costRecordList, cls=CustomEncoder)), key=(lambda data : data['ser_no'])) 
             returnData = [scheduleDict]
         else:
             returnData = list(schedule.objects.all().values())
@@ -75,10 +72,6 @@ def excuteQuery(request):  # 執行查詢
         returnData = schedule.objects.all()
         return returnHttpsResponse(False, '', returnData, '成功')
 
-# Custom JSON encoder to handle Decimal
-
-
-# Custom JSON encoder to handle Decimal and datetime
 class CustomEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, Decimal):

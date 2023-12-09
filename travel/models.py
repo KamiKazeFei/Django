@@ -96,6 +96,8 @@ class cost_record(models.Model):
     pk_id = models.CharField(max_length=32, primary_key=True)
     # 行程PK
     schedule_pk_id = models.CharField(max_length=32, null=False)
+    # 序號
+    ser_no = models.IntegerField(max_length=6, null=False)
     # 花費類型
     type = models.CharField(max_length=8, null=True)
     # 說明
