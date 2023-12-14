@@ -22,4 +22,6 @@ urlpatterns = [
     path('query_schedule/', views.getTravelSchedule),
     path('query/', views.excuteQuery),
     path('save/', views.excuteSave),
+    path('upload/', views.uploadFile),
+    path('file/', views.getFileInfo)
 ]

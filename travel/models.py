@@ -1,4 +1,5 @@
 import datetime
+import os
 from django.db import models
 
 
@@ -97,7 +98,7 @@ class cost_record(models.Model):
     # 行程PK
     schedule_pk_id = models.CharField(max_length=32, null=False)
     # 序號
-    ser_no = models.IntegerField(max_length=6, null=False)
+    ser_no = models.IntegerField(null=False)
     # 花費類型
     type = models.CharField(max_length=8, null=True)
     # 說明
@@ -136,3 +137,56 @@ class TravelDaySchedule:
     description: str
     # 行程位置網址
     map_location: str
+
+
+def getUploadPath(instance, filename):  # 取得檔案上傳路徑
+    folder_name = 'upload/'
+    # 這裡可以檢查目標文件夾是否存在，如果不存在就創建
+    folder_path = os.path.join(folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    return os.path.join(folder_path, filename)
+
+
+class schedule_file(models.Model):  # 行程檔案上傳
+    # 主鍵
+    pk_id = models.CharField(max_length=32, primary_key=True)
+    # 檔案PKID
+    file_pk_id = models.CharField(max_length=32)
+    # 檔案名
+    file_name = models.CharField(max_length=1024, null=False)
+    # 檔案類別 A = 圖片 B = 其他
+    file_type = models.CharField(max_length=1, null=False)
+    # 使用者pk_id
+    user_pk_id = models.CharField(max_length=32, null=True)
+    # 行程pk_id
+    schedule_pk_id = models.CharField(max_length=32, null=True)
+    # 是否刪除
+    isdelete = models.CharField(max_length=1, default='N')
+    # 刪除日
+    delete_dt = models.DateTimeField(null=True, blank=True)
+    # 建立日
+    create_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
+    # 最後異動日
+    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    # 版次
+    version = models.IntegerField(null=False, default=0)
+
+
+class uploaded_file(models.Model):  # 檔案上傳
+    # 主鍵
+    pk_id = models.CharField(max_length=32, primary_key=True)
+    # 檔案資訊
+    file = models.FileField(upload_to=getUploadPath)
+    # 檔案類型
+    content_type = models.CharField(null=True, blank=True, max_length=100)
+    # 是否刪除
+    isdelete = models.CharField(max_length=1, default='N')
+    # 建立日
+    create_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
+    # 最後異動日
+    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    # 版次
+    version = models.IntegerField(null=False, default=0)

@@ -1,9 +1,10 @@
 import datetime
-import decimal
 import json
+import os
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from mysite.settings import SECRET_KEY
+from travel.models import uploaded_file, cost_record, day_introduce, schedule, schedule_file
 from tsp.models import User
 import requests
 import jwt
@@ -11,9 +12,6 @@ from rest_framework import serializers
 from django.db import connection
 from rest_framework_simplejwt.views import (
     TokenRefreshView, TokenVerifyView, TokenObtainPairView)
-
-from travel.models import cost_record, day_introduce, schedule
-
 
 jsonheaders = {'Content-Type': 'application/json'}
 
@@ -72,38 +70,8 @@ def save(body: dict, class_name: str):  # 執行存檔
     except Exception as e:
         return returnHttpsResponse(True, str(e), [], '')
 
-    # #
-    # # data.save()
 
-    # # 執行存檔
-    # try:
-    #     # 檢查欄位合法性，除了PK_ID
-    #     data.full_clean(exclude=excludeList)
-    #     # 轉為字典
-    #     saveData = model_to_dict(data)
-    #     targetObj = (globals()[class_name]).objects.filter(pk_id=data.pk_id)
-    #     targetObjCreateDt = (globals()[class_name]).objects.filter(pk_id=data.pk_id).values('create_dt')
-    #     # 如果已存在，則更新資料，否則新增
-    #     if len(targetObjCreateDt) > 0:
-    #         saveData['version'] += 1
-    #         saveData['create_dt'] = targetObjCreateDt[0]['create_dt']
-    #         targetObj.update(**saveData)
-    #     else:
-    #         data.save()
-    #     # 回傳資訊
-    #     return returnHttpsResponse(False, '', [], '存檔成功')
-    # # 偵測到不合法存檔條件
-    # except ValidationError as e:
-    #     errorKey = [key for key in dict(e).keys()]
-    #     errorMessage = '\n'.join(
-    #         key + ' : ' + str(dict(e)[key]) for key in errorKey)
-    #     return returnHttpsResponse(True, str(errorMessage), [], '')
-    # # 其他存檔錯誤
-    # except Exception as e:
-    #     return returnHttpsResponse(True, str(e), [], '')
-
-
-def query(request: dict, class_name: str):  # 純資料表查詢ㄐ
+def query(request: dict, class_name: str):  # 純資料表查詢
     body_unicode = request.body.decode('utf-8')
     body = {key: value for key, value in json.loads(
         body_unicode).items() if value is not None and value != ''}
