@@ -179,6 +179,10 @@ class uploaded_file(models.Model):  # 檔案上傳
     pk_id = models.CharField(max_length=32, primary_key=True)
     # 檔案資訊
     file = models.FileField(upload_to=getUploadPath)
+    # 圖片寬
+    width = models.IntegerField(null=True)
+    # 圖片高
+    height = models.IntegerField(null=True)
     # 檔案類型
     content_type = models.CharField(null=True, blank=True, max_length=100)
     # 是否刪除
