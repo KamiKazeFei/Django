@@ -178,7 +178,7 @@ SESSION_COOKIE_NAME = 'session_id'
 SESSION_COOKIE_AGE = 3600
 SESSION_COOKIE_HTTPONLY = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['kamikaze.website', '127.0.0.1', 'localhost']
 CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
