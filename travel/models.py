@@ -151,6 +151,8 @@ def getUploadPath(instance, filename):  # 取得檔案上傳路徑
 class schedule_file(models.Model):  # 行程檔案上傳
     # 主鍵
     pk_id = models.CharField(max_length=32, primary_key=True)
+    # 順序
+    ser_no = models.IntegerField(null=True)
     # 檔案PKID
     file_pk_id = models.CharField(max_length=32)
     # 檔案名

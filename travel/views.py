@@ -16,7 +16,7 @@ from PIL import Image
 
 
 @transaction.atomic
-def getTravelSchedule(request):
+def getTravelSchedule(request):  # 查詢單檔行程計畫，僅列出必要資訊
     query = f'''
     select
         pk_id,
@@ -143,7 +143,7 @@ def excuteQuery(request):  # 執行查詢
             scheduleDict['cost_records'] = sorted(json.loads(json.dumps(
                 costRecordList, cls=CustomEncoder)), key=(lambda data: data['ser_no']))
             scheduleDict['file_list'] = sorted(json.loads(json.dumps(
-                fileList, cls=CustomEncoder)), key=(lambda data: data['file_name']))
+                fileList, cls=CustomEncoder)), key=(lambda data: data['ser_no']))
 
             returnData = [scheduleDict]
         else:
