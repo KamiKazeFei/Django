@@ -1,6 +1,31 @@
 import datetime
 import os
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+
+# 系統使用者
+class User(models.Model):
+    # 主鍵
+    pk_id = models.CharField(max_length=32, null=False, primary_key=True)
+    # 帳號
+    account = models.CharField(max_length=64, null=False, unique=True)
+    # 電子郵件
+    email = models.EmailField(null=False, unique=True)
+    # 密碼
+    password = models.CharField(max_length=64, null=False)    
+    # 是否刪除
+    isdelete = models.CharField(max_length=1, default='N')
+    # 刪除日
+    delete_dt = models.DateTimeField(null=True, blank=True)
+    # 建立日
+    create_dt = models.DateTimeField(null=True, blank=True, default=datetime.datetime.now)
+    # 最後異動日
+    last_update_dt = models.DateTimeField( null=True, blank=True, default=datetime.datetime.now)
+    # 版次
+    version = models.IntegerField(null=False, default=0)
+    # 是否已啟用
+    is_activate = models.CharField(null=False, default='N')
 
 
 class schedule(models.Model):  # 旅行計畫
@@ -33,15 +58,18 @@ class schedule(models.Model):  # 旅行計畫
     create_dt = models.DateTimeField(
         null=True, blank=True, default=datetime.datetime.now)
     # 最後異動日
-    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    last_update_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 版次
     version = models.IntegerField(null=False, default=0)
 
 
-class day_introduce(models.Model):
+class day_introduce(models.Model):  # 每日行程安排
     # 子檔 TravelDayIntroduce 的模型
     # schedule = models.ForeignKey(
     #     schedule, on_delete=models.CASCADE, related_name='day_introduces')
+    # 使用者pk
+    user_pk_id = models.CharField(max_length=32, null=True)
     # 序號
     ser_no = models.IntegerField(null=True)
     # 主鍵
@@ -84,15 +112,18 @@ class day_introduce(models.Model):
     create_dt = models.DateTimeField(
         null=True, blank=True, default=datetime.datetime.now)
     # 最後異動日
-    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    last_update_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 版次
     version = models.IntegerField(default=0, null=True)
 
 
-class cost_record(models.Model):
+class cost_record(models.Model):  # 花費紀錄
     # 子檔 TravelDayIntroduce 的模型
     # schedule = models.ForeignKey(
     #     schedule, on_delete=models.CASCADE, related_name='cost_records')
+    # 使用者pk
+    user_pk_id = models.CharField(max_length=32, null=True)
     # 主鍵
     pk_id = models.CharField(max_length=32, primary_key=True)
     # 行程PK
@@ -121,7 +152,8 @@ class cost_record(models.Model):
     create_dt = models.DateTimeField(
         null=True, blank=True, default=datetime.datetime.now)
     # 最後異動日
-    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    last_update_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 版次
     version = models.IntegerField(default=0, null=True)
 
@@ -149,6 +181,8 @@ def getUploadPath(instance, filename):  # 取得檔案上傳路徑
 
 
 class schedule_file(models.Model):  # 行程檔案上傳
+    # 使用者pk
+    user_pk_id = models.CharField(max_length=32, null=True)
     # 主鍵
     pk_id = models.CharField(max_length=32, primary_key=True)
     # 順序
@@ -171,7 +205,8 @@ class schedule_file(models.Model):  # 行程檔案上傳
     create_dt = models.DateTimeField(
         null=True, blank=True, default=datetime.datetime.now)
     # 最後異動日
-    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    last_update_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 版次
     version = models.IntegerField(null=False, default=0)
 
@@ -193,6 +228,7 @@ class uploaded_file(models.Model):  # 檔案上傳
     create_dt = models.DateTimeField(
         null=True, blank=True, default=datetime.datetime.now)
     # 最後異動日
-    last_update_dt = models.DateTimeField(null=True, blank=True, auto_now=True)
+    last_update_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 版次
     version = models.IntegerField(null=False, default=0)

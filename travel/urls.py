@@ -19,6 +19,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("logout/", views.logout),
+    path("login/", views.loginCheck),
+    path("register/", views.register),
     path('query_schedule/', views.getTravelSchedule),
     path('query/', views.excuteQuery),
     path('save/', views.excuteSave),

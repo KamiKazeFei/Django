@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-from datetime import timedelta, timezone
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,8 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-k%$xh!@uz)9-rdlri64_$547gefoqwb+9)qsa^2+!w@a9rmcwj'
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Application definition
 
@@ -41,7 +42,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'mysite',
-    'tsp',
     'travel'
 ]
 
@@ -75,6 +75,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
+ALLOWED_HOSTS = ['kamikaze.website', 'localhost']
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = [
+    'Content-Type',  # 允许Content-Type头部
+    'Authorization',  # 如果需要使用授权头部，请添加
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CORS_ALLOWED_ORIGINS  = [
+    "http://localhost:4200"    
+]
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -140,7 +154,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -164,8 +178,8 @@ SIMPLE_JWT = {
 
     'TOKEN_TYPE_CLAIM': 'token_type',
 
-    'TOKEN_USER_CLASS': 'tsp.models.User',
-    'AUTH_USER_MODEL': 'tsp.models.User',
+    'TOKEN_USER_CLASS': 'travel.models.User',
+    'AUTH_USER_MODEL': 'travel.models.User',
     'EXCEPTION_HANDLER': 'mysite.exceptions.custom_exception_handler',
     'JTI_CLAIM': 'jti',
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
@@ -177,16 +191,3 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_COOKIE_NAME = 'session_id'
 SESSION_COOKIE_AGE = 3600
 SESSION_COOKIE_HTTPONLY = True
-
-ALLOWED_HOSTS = ['kamikaze.website', '127.0.0.1', 'localhost']
-CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_HEADERS = [
-    'Content-Type',  # 允许Content-Type头部
-    'Authorization',  # 如果需要使用授权头部，请添加
-]
-
-# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True

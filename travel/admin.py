@@ -1,3 +1,4 @@
 from django.contrib import admin
+from travel.models import User
 
-# Register your models here.
+admin.site.register(User)

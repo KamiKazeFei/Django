@@ -1,11 +1,9 @@
 import datetime
 import json
-import os
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from mysite.settings import SECRET_KEY
-from travel.models import uploaded_file, cost_record, day_introduce, schedule, schedule_file
-from tsp.models import User
+from travel.models import uploaded_file, cost_record, day_introduce, schedule, schedule_file, User
 import requests
 import jwt
 from rest_framework import serializers
@@ -58,13 +56,19 @@ def save(body: dict, class_name: str):  # 執行存檔
     serializer = ModelSerializer(class_name, data=body)
     existsData = (globals()[class_name]).objects.filter(
         pk_id=body['pk_id']).first()
+    
+    current_time = datetime.datetime.now()
+    iso_format_string = current_time.isoformat()
+    
     try:
         if existsData == None:
             serializer.is_valid(raise_exception=True)
             serializer.save()
-        else:
+        else:            
             for key, value in body.items():
                 setattr(existsData, key, value)
+                
+            existsData.last_update_dt = datetime.datetime.fromisoformat(iso_format_string)            
             existsData.save()
         return returnHttpsResponse(False, '', [], '存檔成功')
     except Exception as e:
@@ -109,7 +113,7 @@ def jwt_token_required(view_func):  # 檢查JWT是否有效
             refreshAccessToken(request)
             return wrapped_view(request)
         except jwt.DecodeError as e1:
-            return returnHttpsResponse(True, 'JWT解析錯誤，登入失敗', [], '')
+            return returnHttpsResponse(True, 'JWT解析錯誤,登入失敗', [], '')
     return wrapped_view
 
 
