@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-k%$xh!@uz)9-rdlri64_$547gefoqwb+9)qsa^2+!w@a9rmcwj
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # Application definition
 
@@ -86,8 +86,8 @@ CORS_ALLOW_HEADERS = [
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-CORS_ALLOWED_ORIGINS  = [
-    "http://localhost:4200"    
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200"
 ]
 
 # Database

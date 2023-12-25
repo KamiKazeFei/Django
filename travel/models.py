@@ -2,9 +2,11 @@ import datetime
 import os
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from django.utils import timezone
 
 # 系統使用者
+
+
 class User(models.Model):
     # 主鍵
     pk_id = models.CharField(max_length=32, null=False, primary_key=True)
@@ -13,15 +15,17 @@ class User(models.Model):
     # 電子郵件
     email = models.EmailField(null=False, unique=True)
     # 密碼
-    password = models.CharField(max_length=64, null=False)    
+    password = models.CharField(max_length=64, null=False)
     # 是否刪除
     isdelete = models.CharField(max_length=1, default='N')
     # 刪除日
     delete_dt = models.DateTimeField(null=True, blank=True)
     # 建立日
-    create_dt = models.DateTimeField(null=True, blank=True, default=datetime.datetime.now)
+    create_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 最後異動日
-    last_update_dt = models.DateTimeField( null=True, blank=True, default=datetime.datetime.now)
+    last_update_dt = models.DateTimeField(
+        null=True, blank=True, default=datetime.datetime.now)
     # 版次
     version = models.IntegerField(null=False, default=0)
     # 是否已啟用
@@ -110,10 +114,10 @@ class day_introduce(models.Model):  # 每日行程安排
     delete_dt = models.DateTimeField(null=True, blank=True)
     # 建立日
     create_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 最後異動日
     last_update_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 版次
     version = models.IntegerField(default=0, null=True)
 
@@ -150,10 +154,10 @@ class cost_record(models.Model):  # 花費紀錄
     delete_dt = models.DateTimeField(null=True, blank=True)
     # 建立日
     create_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 最後異動日
     last_update_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 版次
     version = models.IntegerField(default=0, null=True)
 
@@ -203,10 +207,10 @@ class schedule_file(models.Model):  # 行程檔案上傳
     delete_dt = models.DateTimeField(null=True, blank=True)
     # 建立日
     create_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 最後異動日
     last_update_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 版次
     version = models.IntegerField(null=False, default=0)
 
@@ -226,9 +230,9 @@ class uploaded_file(models.Model):  # 檔案上傳
     isdelete = models.CharField(max_length=1, default='N')
     # 建立日
     create_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 最後異動日
     last_update_dt = models.DateTimeField(
-        null=True, blank=True, default=datetime.datetime.now)
+        null=True, blank=True, default=timezone.now())
     # 版次
     version = models.IntegerField(null=False, default=0)

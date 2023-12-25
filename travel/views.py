@@ -13,12 +13,12 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from email_validator import validate_email, EmailNotValidError
+from django.utils import timezone
 
 
 @transaction.atomic
-# @jwt_token_required
+@jwt_token_required
 def getTravelSchedule(request):  # 查詢單檔行程計畫，僅列出必要資訊
-    print(request.COOKIES.get('access_token'))
     query = f'''
     select
         pk_id,
@@ -30,25 +30,79 @@ def getTravelSchedule(request):  # 查詢單檔行程計畫，僅列出必要資
     from
         travel_schedule
     where 
-        isdelete = 'N'
+        isdelete = 'N' and 
+        user_pk_id = %s
     '''
     try:
-        return returnHttpsResponse(False, '', execute_raw_sql(query), '')
+        return returnHttpsResponse(False, '', execute_raw_sql(query, [request.user.pk_id]), '', request)
     except Exception as e:
-        return returnHttpsResponse(True, str(e), [], '')
+        return returnHttpsResponse(True, str(e), [], '', request)
 
 
-# @jwt_token_required
+@transaction.atomic
+@jwt_token_required
+def excuteQuery(request):  # 執行查詢
+    # 登入者
+    user = request.user
+    returnData = []
+    if len(request.body.decode('utf-8')) > 0:
+        body = json.loads(request.body.decode('utf-8'))
+        if len(list(body.keys())) > 0:
+            # 查詢行程主檔
+            travelSchedule = schedule.objects.get(
+                Q(pk_id=body['pk_id'], user_pk_id=user.pk_id))
+            # 查詢每天行程
+            introducesList = [model_to_dict(data) for data in day_introduce.objects.filter(
+                schedule_pk_id=travelSchedule.pk_id, isdelete='N', user_pk_id=user.pk_id)]
+            # 查詢預算紀錄
+            costRecordList = [model_to_dict(data) for data in cost_record.objects.filter(
+                schedule_pk_id=travelSchedule.pk_id, isdelete='N', user_pk_id=user.pk_id)]
+
+            # 查詢附檔
+            fileList = []
+            for data in schedule_file.objects.filter(schedule_pk_id=travelSchedule.pk_id, isdelete='N', user_pk_id=user.pk_id):
+                uploadFile = uploaded_file.objects.get(pk_id=data.file_pk_id)
+                if data.file_type == 'A':
+                    newData = model_to_dict(data)
+                    newData['width'] = uploadFile.width
+                    newData['height'] = uploadFile.height
+                    fileList.append(newData)
+                elif 'pdf' in uploadFile.content_type:
+                    newData = model_to_dict(data)
+                    newData['is_pdf'] = True
+                    fileList.append(newData)
+                else:
+                    fileList.append(model_to_dict(data))
+
+            scheduleDict = model_to_dict(travelSchedule)
+            scheduleDict['day_introduces'] = sorted(json.loads(json.dumps(
+                introducesList, cls=CustomEncoder)), key=(lambda data: data['date']))
+            scheduleDict['cost_records'] = sorted(json.loads(json.dumps(
+                costRecordList, cls=CustomEncoder)), key=(lambda data: data['ser_no']))
+            scheduleDict['file_list'] = sorted(json.loads(json.dumps(
+                fileList, cls=CustomEncoder)), key=(lambda data: data['ser_no']))
+
+            returnData = [scheduleDict]
+        else:
+            returnData = list(schedule.objects.all().values())
+        return returnHttpsResponse(False, '', returnData, '成功', request)
+    else:
+        returnData = schedule.objects.all()
+        return returnHttpsResponse(False, '', returnData, '成功', request)
+
+
+@jwt_token_required
+@transaction.atomic
 def excuteSave(request):  # 存檔
     # 登入人
     user = request.user
     body = json.loads(request.body.decode('utf-8'))
     saveData = body['schedule']
-    returnObj = save(saveData, 'schedule')
+    returnObj = save(saveData, 'schedule', request)
     # 儲存各天的行程
     if 'day_introduces' in saveData.keys():
         for data in list(saveData['day_introduces']):
-            # data['user_pk_id'] = user.pk_id
+            data['user_pk_id'] = user.pk_id
             response = json.loads(
                 save(data, 'day_introduce').content.decode('utf-8'))
             # 存檔有錯時，直接回傳錯誤
@@ -58,17 +112,18 @@ def excuteSave(request):  # 存檔
     # 儲存行程的預算
     if 'cost_records' in saveData.keys():
         for data in list(saveData['cost_records']):
-            # data['user_pk_id'] = user.pk_id
+            data['user_pk_id'] = user.pk_id
             save(data, 'cost_record')
     # 儲存附檔
     if 'file_list' in saveData.keys():
         for data in list(saveData['file_list']):
-            # data['user_pk_id'] = user.pk_id
+            data['user_pk_id'] = user.pk_id
             save(data, 'schedule_file')
     return returnObj
 
 
-# @jwt_token_required
+@jwt_token_required
+@transaction.atomic
 def uploadFile(request):  # 上傳檔案
     for key, files in request.FILES.lists():
         fileList = []
@@ -98,12 +153,12 @@ def uploadFile(request):  # 上傳檔案
     return returnHttpsResponse(False, '', fileList, '成功')
 
 
-# @jwt_token_required
-def getFileInfo(request):  # 取得上傳檔案    
+@jwt_token_required
+@transaction.atomic
+def getFileInfo(request):  # 取得上傳檔案
     file_pk_id = request.GET.get('file_pk_id')
     if file_pk_id:
         file = get_object_or_404(uploaded_file, pk_id=file_pk_id)
-        # 設置Content-Disposition頭部，這裡設置為直接在瀏覽器中顯示（如果可能）
         try:
             response = HttpResponse(
                 file.file.read(), content_type=file.content_type)
@@ -122,8 +177,7 @@ def register(request):  # 註冊
     body['pk_id'] = str(uuid.uuid4()).replace('-', '')
     # 查詢是否有重複使用的帳號 & email
     try:
-        user = User.objects.get(
-            Q(account=body['account']) | Q(email=body['email']))
+        User.objects.get(Q(account=body['account']) | Q(email=body['email']))
         return returnHttpsResponse(True, '已存在重複註冊帳號或Email，請重新再試', [], '')
     # 不存在重複資訊使用者，建立新使用者
     except User.DoesNotExist as e1:
@@ -142,8 +196,7 @@ def register(request):  # 註冊
         return returnHttpsResponse(True, str(e3), [], '')
 
 
-@transaction.atomic
-def loginCheck(request):  # 登入
+def executelogin(request):  # 登入
     data = json.loads(request.body.decode('utf-8'))
     try:
         # 取得登入者資訊
@@ -154,19 +207,43 @@ def loginCheck(request):  # 登入
         # 建立回傳資訊
         response = returnHttpsResponse(False, '登入成功', [], '')
 
-        accessTokenTime = datetime.now().date() + timedelta(days=7)
-        refreshTokenTime = datetime.now().date() + timedelta(days=30)
+        accessTokenTime = timezone.now().date() + timedelta(minutes=3)
+        refreshTokenTime = timezone.now().date() + timedelta(days=30)
 
         # 設置Access Token
-        response.set_cookie(
-            'access_token', token['access'], max_age=86400, expires=accessTokenTime)
+        response.set_cookie('access_token', token['access'], max_age=180,
+                            expires=accessTokenTime, samesite='strict', secure=True, httponly=True)
         # 設置Refresh Token
-        response.set_cookie(
-            'refresh_token', token['refresh'], max_age=604800, expires=refreshTokenTime)
+        response.set_cookie('refresh_token', token['refresh'], max_age=604800,
+                            expires=refreshTokenTime, samesite='strict', secure=True, httponly=True)
         # 回傳資訊
         return response
     except Exception as e:
-        return returnHttpsResponse(True, '登入失敗，請確認登入資訊是否正確', [], '')
+        return returnHttpsResponse(True, '登入失敗，請確認登入資訊是否正確', [], '', request)
+
+
+def loginCheck(request):  # 檢查登入
+    data = json.loads(request.body.decode('utf-8'))
+    try:
+        # 取得登入者資訊
+        loginUser = User.objects.get(Q(Q(email=data['login_id']) | Q(
+            account=data['login_id']) & Q(password=data['password'])))
+        # 取得驗證Token
+        token = getTokensForUser(loginUser)
+        # 建立回傳資訊
+        response = returnHttpsResponse(False, '登入成功', [], '')
+
+        accessTokenTime = datetime.now().date() + timedelta(days=1)
+        refreshTokenTime = datetime.now().date() + timedelta(days=30)
+
+        # 設置Access Token
+        response.set_cookie('access_token', token['access'], max_age=86400, expires=accessTokenTime)
+        # 設置Refresh Token
+        response.set_cookie('refresh_token', token['refresh'], max_age=604800, expires=refreshTokenTime)
+        # 回傳資訊
+        return response
+    except Exception as e:
+        return returnHttpsResponse(True, '登入失敗，請確認登入資訊是否正確', [], '', request)
 
 
 def getTokensForUser(user):  # 建立JWT Token
@@ -177,64 +254,13 @@ def getTokensForUser(user):  # 建立JWT Token
     }
 
 
-# @jwt_token_required
 def logout(request):  # 登出
     response = returnHttpsResponse(False, '已登出', [], '')
-    response.set_cookie('ACCESS_TOKEN', '', max_age=0,
-                        samesite='none', secure=True)
-    response.set_cookie('REFRESH_TOKEN', '', max_age=0,
-                        samesite='none', secure=True)
+    response.set_cookie('access_token', '', max_age=0, expires=timezone.now(
+    ), samesite='strict', secure=True, httponly=True)
+    response.set_cookie('refresg_token', '', max_age=0, expires=timezone.now(
+    ), samesite='strict', secure=True, httponly=True)
     return response
-
-
-@transaction.atomic
-# @jwt_token_required
-def excuteQuery(request):  # 執行查詢
-    print(request.COOKIES.get('access_token'))
-    returnData = []
-    if len(request.body.decode('utf-8')) > 0:
-        body = json.loads(request.body.decode('utf-8'))
-        if len(list(body.keys())) > 0:
-            # 查詢行程主檔
-            travelSchedule = schedule.objects.get(Q(pk_id=body['pk_id']))
-            # 查詢每天行程
-            introducesList = [model_to_dict(data) for data in day_introduce.objects.filter(
-                schedule_pk_id=travelSchedule.pk_id, isdelete='N')]
-            # 查詢預算紀錄
-            costRecordList = [model_to_dict(data) for data in cost_record.objects.filter(
-                schedule_pk_id=travelSchedule.pk_id, isdelete='N')]
-
-            # 查詢附檔
-            fileList = []
-            for data in schedule_file.objects.filter(schedule_pk_id=travelSchedule.pk_id, isdelete='N'):
-                uploadFile = uploaded_file.objects.get(pk_id=data.file_pk_id)
-                if data.file_type == 'A':
-                    newData = model_to_dict(data)
-                    newData['width'] = uploadFile.width
-                    newData['height'] = uploadFile.height
-                    fileList.append(newData)
-                elif 'pdf' in uploadFile.content_type:
-                    newData = model_to_dict(data)
-                    newData['is_pdf'] = True
-                    fileList.append(newData)
-                else:
-                    fileList.append(model_to_dict(data))
-
-            scheduleDict = model_to_dict(travelSchedule)
-            scheduleDict['day_introduces'] = sorted(json.loads(json.dumps(
-                introducesList, cls=CustomEncoder)), key=(lambda data: data['date']))
-            scheduleDict['cost_records'] = sorted(json.loads(json.dumps(
-                costRecordList, cls=CustomEncoder)), key=(lambda data: data['ser_no']))
-            scheduleDict['file_list'] = sorted(json.loads(json.dumps(
-                fileList, cls=CustomEncoder)), key=(lambda data: data['ser_no']))
-
-            returnData = [scheduleDict]
-        else:
-            returnData = list(schedule.objects.all().values())
-        return returnHttpsResponse(False, '', returnData, '成功')
-    else:
-        returnData = schedule.objects.all()
-        return returnHttpsResponse(False, '', returnData, '成功')
 
 
 class CustomEncoder(json.JSONEncoder):
