@@ -207,43 +207,27 @@ def executelogin(request):  # 登入
         # 建立回傳資訊
         response = returnHttpsResponse(False, '登入成功', [], '')
 
-        accessTokenTime = timezone.now().date() + timedelta(minutes=3)
+        accessTokenTime = timezone.now().date() + timedelta(days=3)
         refreshTokenTime = timezone.now().date() + timedelta(days=30)
 
         # 設置Access Token
-        response.set_cookie('access_token', token['access'], max_age=180,
-                            expires=accessTokenTime, samesite='strict', secure=True, httponly=True)
+        response.set_cookie('access_token', token['access'], max_age=86400,
+                            expires=accessTokenTime, samesite='strict',  httponly=True)
         # 設置Refresh Token
         response.set_cookie('refresh_token', token['refresh'], max_age=604800,
-                            expires=refreshTokenTime, samesite='strict', secure=True, httponly=True)
+                            expires=refreshTokenTime, samesite='strict',  httponly=True)
         # 回傳資訊
         return response
     except Exception as e:
         return returnHttpsResponse(True, '登入失敗，請確認登入資訊是否正確', [], '', request)
 
-
+@jwt_token_required
 def loginCheck(request):  # 檢查登入
     data = json.loads(request.body.decode('utf-8'))
-    try:
-        # 取得登入者資訊
-        loginUser = User.objects.get(Q(Q(email=data['login_id']) | Q(
-            account=data['login_id']) & Q(password=data['password'])))
-        # 取得驗證Token
-        token = getTokensForUser(loginUser)
-        # 建立回傳資訊
-        response = returnHttpsResponse(False, '登入成功', [], '')
-
-        accessTokenTime = datetime.now().date() + timedelta(days=1)
-        refreshTokenTime = datetime.now().date() + timedelta(days=30)
-
-        # 設置Access Token
-        response.set_cookie('access_token', token['access'], max_age=86400, expires=accessTokenTime)
-        # 設置Refresh Token
-        response.set_cookie('refresh_token', token['refresh'], max_age=604800, expires=refreshTokenTime)
-        # 回傳資訊
-        return response
+    try:                
+        return returnHttpsResponse(False, '登入成功', [], '', request)
     except Exception as e:
-        return returnHttpsResponse(True, '登入失敗，請確認登入資訊是否正確', [], '', request)
+        return returnHttpsResponse(True, '登入狀態已逾時，請重新登入', [], '', request)
 
 
 def getTokensForUser(user):  # 建立JWT Token
@@ -257,9 +241,9 @@ def getTokensForUser(user):  # 建立JWT Token
 def logout(request):  # 登出
     response = returnHttpsResponse(False, '已登出', [], '')
     response.set_cookie('access_token', '', max_age=0, expires=timezone.now(
-    ), samesite='strict', secure=True, httponly=True)
+    ), samesite='strict',  httponly=True)
     response.set_cookie('refresg_token', '', max_age=0, expires=timezone.now(
-    ), samesite='strict', secure=True, httponly=True)
+    ), samesite='strict',  httponly=True)
     return response
 
 

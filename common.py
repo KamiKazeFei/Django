@@ -47,7 +47,7 @@ def returnHttpsResponse(error: bool, error_message: str, data: list, message: st
     if (request is not None):
         if ('required_reset_access' in request.session) and (request.COOKIES.get('new_access_token') is not None):
             accessTokenTime = timezone.now().date() + timedelta(days=1)
-            response.set_cookie('access_token', request.COOKIES.get('access_token'), max_age=86400, expires=accessTokenTime)
+            response.set_cookie('access_token', request.COOKIES.get('access_token'), max_age=86400, expires=accessTokenTime, samesite='strict',  httponly=True)
     return response
 
 
